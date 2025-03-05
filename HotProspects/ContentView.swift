@@ -5,51 +5,44 @@
 //  Created by Shashank B on 05/03/25.
 //
 
+//If you’re going to use them, use them in lots of places – it can be frustrating to press and hold on something only to find nothing happens.
+//Keep your list of options as short as you can – aim for three or less.
+//Don’t repeat options the user can already see elsewhere in your UI.
+//Remember, context menus are by their nature hidden, so please think twice before hiding important actions in a context menu.
+
 import SwiftUI
 
 struct ContentView: View {
-    @State private var output = ""
+    @State private var backgroundColor = Color.red
 
     var body: some View {
-        Text(output)
-            .task {
-                await fetchReadings()
-            }
-    }
+        VStack {
+            Text("Hello, World!")
+                .padding()
+                .background(backgroundColor)
 
-    func fetchReadings() async {
-       let fetchTask = Task {
-           let url = URL(string: "https://jsonplaceholder.typicode.com/posts")!
-           let (data, _) = try await URLSession.shared.data(from: url)
-           let posts = try JSONDecoder().decode([Post].self, from: data)
-           
-                      // Extracting only the post IDs to simulate "readings"
-           let ids = posts.map { $0.id }
-            return "Found \(ids.count) readings"
-        }
-        
-        let result = await fetchTask.result
-//        do {
-//            output = try result.get()
-//        }catch {
-//            output = "Error:\(error.localizedDescription)"
-//        }
-        
-        //or alternatively
-        switch result {
-        case .success(let str):
-                output = str
-            case .failure(let error):
-                output = "Error: \(error.localizedDescription)"
+            Text("Change Color")
+                .padding()
+                .contextMenu {
+                    Button("Red") {
+                        backgroundColor = .red
+                    }
+                    
+                    Button("Pink", systemImage: "checkmark.circle.fill",role: .destructive) {
+                        backgroundColor = .pink
+                    }
+
+                    Button("Green") {
+                        backgroundColor = .green
+                    }
+
+                    Button("Blue") {
+                        backgroundColor = .blue
+                    }
+                }
         }
     }
 }
-
-// Struct to match JSON data
-struct Post: Codable {
-    let id: Int
-}
-
 #Preview {
     ContentView()
 }
