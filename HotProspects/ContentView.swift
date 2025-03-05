@@ -5,97 +5,49 @@
 //  Created by Shashank B on 05/03/25.
 //
 
-//Tip: It’s common to want to use NavigationStack and TabView at the same time, but you should be careful: TabView should be the parent view, with the tabs inside it having a NavigationStack as necessary, rather than the other way around.
-//should TabView be the parent, not NavigationStack
-
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab = "One"
+    @State private var output = ""
 
     var body: some View {
-        TabView (selection:$selectedTab){
-            Text("tab 1")
-                .tabItem {
-                    Label("One", systemImage: "star")
-                }
-                .tag("One")
-            Text("tab 2")
-                .tabItem {
-                    Label("Two", systemImage: "star")
-                    
-                }
-                .tag("Two")
+        Text(output)
+            .task {
+                await fetchReadings()
+            }
+    }
+
+    func fetchReadings() async {
+       let fetchTask = Task {
+           let url = URL(string: "https://jsonplaceholder.typicode.com/posts")!
+           let (data, _) = try await URLSession.shared.data(from: url)
+           let posts = try JSONDecoder().decode([Post].self, from: data)
+           
+                      // Extracting only the post IDs to simulate "readings"
+           let ids = posts.map { $0.id }
+            return "Found \(ids.count) readings"
         }
         
-        Button("Change tabs") {
-            selectedTab = selectedTab == "One" ?  "Two" :  "One"
+        let result = await fetchTask.result
+//        do {
+//            output = try result.get()
+//        }catch {
+//            output = "Error:\(error.localizedDescription)"
+//        }
+        
+        //or alternatively
+        switch result {
+        case .success(let str):
+                output = str
+            case .failure(let error):
+                output = "Error: \(error.localizedDescription)"
         }
     }
 }
 
-//✅ Correct Approach: TabView as the Parent
-struct CorrectApproach: View {
-    var body: some View {
-        TabView {
-            NavigationStack {
-                FirstTabView()
-            }
-            .tabItem {
-                Label("First", systemImage: "1.circle")
-            }
-
-            NavigationStack {
-                SecondTabView()
-            }
-            .tabItem {
-                Label("Second", systemImage: "2.circle")
-            }
-        }
-    }
-}
-
-struct FirstTabView: View {
-    var body: some View {
-        NavigationLink("Go to Detail", destination: Text("Detail View in First Tab"))
-            .navigationTitle("First Tab")
-    }
-}
-
-struct SecondTabView: View {
-    var body: some View {
-        NavigationLink("Go to Detail", destination: Text("Detail View in Second Tab"))
-            .navigationTitle("Second Tab")
-    }
-}
-
-
-//works cant keep track of the tabs which i have come from
-struct WrongApproach: View {
-    var body: some View {
-        NavigationStack { // ❌ NavigationStack as parent
-            TabView {
-                FirstTabView()
-                    .tabItem {
-                        Label("First", systemImage: "1.circle")
-                    }
-                
-                SecondTabView()
-                    .tabItem {
-                        Label("Second", systemImage: "2.circle")
-                    }
-            }
-        }
-    }
-}
-
-
-#Preview {
-    CorrectApproach()
-}
-
-#Preview {
-    WrongApproach()
+// Struct to match JSON data
+struct Post: Codable {
+    let id: Int
 }
 
 #Preview {
